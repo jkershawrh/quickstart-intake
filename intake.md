@@ -176,20 +176,125 @@ If the existing README is good, keep its content and add the missing sections. I
 - Verify .gitignore covers .env, __pycache__, venv/
 - If secrets are found in the source, REMOVE them from the output and add the variable to .env.example instead
 
-### Phase 7: Validate
+### Phase 7: Static Validation
 
-Before reporting, verify the output quickstart is internally consistent:
+Before running, verify the output quickstart is internally consistent:
 
-1. Run `make test-publication` mentally — does the README pass test_readme.py's checks?
-2. Do all internal links in the README resolve to real files in the output?
-3. Does the Makefile reference paths that exist?
-4. Does the validation_matrix stage_2_unit have real criteria (not empty)?
-5. Does the claim_registry have entries for every number in the README?
-6. Does the benchmark_rubric have thresholds matching the claims?
+1. Do all internal links in the README resolve to real files in the output?
+2. Does the Makefile reference paths that exist?
+3. Does the validation_matrix stage_2_unit have real criteria (not empty)?
+4. Does the claim_registry have entries for every number in the README?
+5. Does the benchmark_rubric have thresholds matching the claims?
 
-Fix any inconsistencies before reporting.
+Fix any inconsistencies before proceeding.
 
-### Phase 8: Report
+### Phase 8: Run & Validate
+
+Actually run the quickstart and verify it works. This is the difference between "the repo looks right" and "the repo actually works."
+
+**Step 1: Install dependencies**
+
+If the quickstart has a `pyproject.toml` or `requirements.txt`:
+
+```bash
+cd /tmp/quickstart-intake-<repo-name>
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]" 2>/dev/null || pip install -r requirements.txt 2>/dev/null || pip install -r src/requirements.txt 2>/dev/null
+pip install pytest pyyaml 2>/dev/null
+```
+
+**Step 2: Run publication tests**
+
+```bash
+python -m pytest tests/publication/ -v --tb=short 2>&1
+```
+
+Report pass/fail. If tests fail, fix the README or test_readme.py to make them pass — the output must be green.
+
+**Step 3: Run contract tests**
+
+If `tests/contracts/` has test files:
+
+```bash
+python -m pytest tests/contracts/ -v --tb=short 2>&1
+```
+
+Report pass/fail. If OpenAPI specs don't parse, fix them.
+
+**Step 4: Run unit tests**
+
+If `tests/unit/` has test files:
+
+```bash
+python -m pytest tests/unit/ -v --tb=short 2>&1
+```
+
+Report pass/fail. Note: unit tests may need environment variables (MODEL_ENDPOINT, DEMO_MODE). Try with `DEMO_MODE=true` if available.
+
+**Step 5: Helm template render** (if chart/ exists)
+
+```bash
+helm template test chart/ --values chart/values.yaml 2>&1
+```
+
+Report pass/fail. Template must render without errors.
+
+**Step 6: Container build** (if Containerfile/Dockerfile exists)
+
+```bash
+podman build -t quickstart-test:latest -f src/Containerfile src/ 2>&1
+```
+
+Or if Containerfile is at root:
+
+```bash
+podman build -t quickstart-test:latest -f Containerfile . 2>&1
+```
+
+Report pass/fail. If the build fails, note the error but don't block — container builds may need registry access or specific base images.
+
+**Step 7: Compose stack** (if docker-compose.yml exists)
+
+```bash
+podman compose up -d 2>&1
+# Wait for health checks
+sleep 10
+# Check if services are running
+podman compose ps 2>&1
+# Hit health endpoint if the app exposes one
+curl -sf http://localhost:8000/health 2>/dev/null && echo "HEALTH: OK" || echo "HEALTH: no response"
+# Clean up
+podman compose down -v 2>&1
+```
+
+Report pass/fail. Note: compose stacks may need model downloads or external services. If they fail due to missing models or network access, note it as EXPECTED rather than a failure.
+
+**Step 8: Script execution** (for script-based quickstarts)
+
+If the quickstart is script-based (like rhaiis-cpu-quickstart), run the main script in a dry-run or help mode if available:
+
+```bash
+bash -n start.sh 2>&1  # syntax check
+```
+
+Report pass/fail on syntax. Full execution may require hardware/registries — note as NEEDS HARDWARE.
+
+**Reporting format for Phase 8:**
+
+```
+RUN & VALIDATE:
+  [PASS] Publication tests (X/X passed)
+  [PASS] Contract tests (X/X passed)
+  [PASS] Unit tests (X/X passed)
+  [PASS] Helm template renders
+  [SKIP] Container build (needs registry access)
+  [SKIP] Compose stack (needs model download)
+```
+
+If any test fails, fix it before reporting. The output quickstart must have green tests for the stages that can run without external dependencies (publication, contracts, unit tests with mocks/demo mode).
+
+### Phase 9: Report
 
 ```
 QUICKSTART INTAKE: <repo-name>
@@ -230,6 +335,14 @@ CLAIMS ................ [X registered, all unverified]
 
 SECURITY .............. [CLEAN / ISSUES]
   ...
+
+RUN & VALIDATE ........ [X/Y passed, Z skipped]
+  [PASS] Publication tests (X/X)
+  [PASS] Contract tests (X/X)
+  [PASS] Unit tests (X/X)
+  [PASS] Helm template renders
+  [SKIP] Container build (needs registry)
+  [SKIP] Compose stack (needs model)
 
 REMAINING MANUAL STEP:
   Verify performance claims on target hardware and update
