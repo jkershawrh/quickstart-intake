@@ -1,18 +1,26 @@
 # Quickstart Intake
 
-Take an existing GitHub repo and turn it into a factory-standard Intel AI Quickstart.
+Take an existing GitHub repo and turn it into a factory-standard Intel AI Quickstart. Business solution first, tech second.
 
 ## What it does
 
-You point it at a repo. It:
+You point `/intake` at a repo. It:
 
-1. **Clones and reads** the repo to understand what it does
-2. **Runs a gap analysis** against the factory quickstart structure (tests, Makefile, validation matrix, claim registry, benchmark rubric, architecture diagrams, LICENSE, README sections)
-3. **Scaffolds the missing pieces** — creates the factory test harness, claim registry, validation matrix, and Makefile around the existing code without touching it
-4. **Flags README gaps** — reports what sections need to be added or restructured to match the publication standard, but doesn't rewrite without approval
-5. **Audits claims** — finds performance numbers in the README and source, registers them as unverified claims that need measurement
-6. **Checks Intel story and branding** — rates the Intel value prop and flags branding issues
-7. **Reports a verdict** — READY to push, or AFTER FIXES with a specific action list
+1. **Reads the repo** to understand what it does
+2. **Assesses the business solution** (GATE CHECK) — does this solve a real industry problem? Is the business value clear before the tech details? Can someone learn HOW to build it? If there's no business story, it flags that before anything else
+3. **Runs a gap analysis** against the full factory structure (tests, Makefile, validation matrix, claim registry, benchmark rubric, CI workflow, architecture diagrams, .env.example, LICENSE)
+4. **Scaffolds the missing pieces** — creates the factory test harness and build tooling around the existing code without touching it
+5. **Assesses the README** — reports what sections need to be added to meet publication standards (business problem first)
+6. **Audits claims** — finds performance numbers, registers them as unverified claims
+7. **Checks Intel story and branding** — "Powered by Intel" OK, "Gaudi" in branding not OK
+8. **Checks security** — no hardcoded secrets, .env coverage
+9. **Reports a verdict** — READY, NEEDS WORK, or NOT READY with specific action items
+
+## The gate check
+
+The first thing the skill evaluates is the business solution — not the code quality. Kelkhund's approval criteria for the `rh-ai-quickstart` org: business solution comes first, technical "how it's done" comes second. A technically perfect quickstart with no business story won't get published.
+
+It also assesses teachability: can a user learn HOW to build this, not just run it? This matters for showroom lab conversion downstream.
 
 ## What it doesn't do
 
@@ -45,8 +53,13 @@ Every quickstart produced by the factory ships with:
 | `tests/claim_registry.yaml` | Every factual assertion tracked with provenance |
 | `tests/benchmark_rubric.yaml` | Technique-specific performance thresholds |
 | `tests/publication/test_readme.py` | Automated README structure validation |
+| `tests/conftest.py` | Shared test fixtures |
 | `Makefile` | `make test-all` runs all 6 stages sequentially |
+| `.github/workflows/ci.yaml` | CI runs contracts + publication checks on push |
+| `.env.example` | Environment variable template with placeholders |
 | `docs/images/` | Architecture diagrams |
 | `LICENSE` | Apache 2.0 |
 
-The intake skill wraps this scaffolding around repos that weren't built with the factory from the start.
+## Pipeline position
+
+**repo** --`/intake`--> **quickstart** --`/onboard`--> **showroom lab**
