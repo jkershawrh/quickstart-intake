@@ -1,20 +1,21 @@
 # Quickstart Intake
 
-Take an existing GitHub repo and turn it into a factory-standard Intel AI Quickstart. Business solution first, tech second.
+Take an existing GitHub repo and produce a complete, ready-to-push Intel AI Quickstart. Business solution first, tech second.
 
 ## What it does
 
 You point `/intake` at a repo. It:
 
-1. **Reads the repo** to understand what it does
-2. **Assesses the business solution** (GATE CHECK) — does this solve a real industry problem? Is the business value clear before the tech details? Can someone learn HOW to build it? If there's no business story, it flags that before anything else
-3. **Runs a gap analysis** against the full factory structure (tests, Makefile, validation matrix, claim registry, benchmark rubric, CI workflow, architecture diagrams, .env.example, LICENSE)
-4. **Scaffolds the missing pieces** — creates the factory test harness and build tooling around the existing code without touching it
-5. **Assesses the README** — reports what sections need to be added to meet publication standards (business problem first)
-6. **Audits claims** — finds performance numbers, registers them as unverified claims
-7. **Checks Intel story and branding** — "Powered by Intel" OK, "Gaudi" in branding not OK
-8. **Checks security** — no hardcoded secrets, .env coverage
-9. **Reports a verdict** — READY, NEEDS WORK, or NOT READY with specific action items
+1. **Clones the source repo read-only** — never modifies it
+2. **Assesses the business solution** (GATE CHECK) — does this solve a real industry problem? Is the business value clear before the tech details? Can someone learn HOW to build it? If the business story is weak, it reframes it
+3. **Builds a complete quickstart** in a separate output directory — copies the source, then fills in every missing factory component with real content (not blank templates)
+4. **Rewrites the README** to lead with the business problem, adds all required sections (Table of Contents, Overview, Architecture, Requirements, Deploy, Repository structure, References, Tags), and ensures it passes `test_readme.py`
+5. **Registers all claims** — scans README and source for performance numbers, creates a claim registry entry for each with file/line and verification status
+6. **Fills in technique-specific test criteria** — reads the source code and writes real `stage_2_unit` criteria in the validation matrix, not placeholders
+7. **Checks Intel story and branding** — rates the value prop, suggests strengthening if weak, enforces "Powered by Intel" rules
+8. **Checks security** — scans for hardcoded secrets, removes any found, adds variables to `.env.example`
+9. **Self-validates** — verifies the output is internally consistent (README passes test_readme.py, Makefile paths resolve, claims match registry)
+10. **Reports a scorecard** — business solution rating, Intel story, files created/modified, claims registered, security status, verdict
 
 ## The gate check
 
@@ -22,11 +23,21 @@ The first thing the skill evaluates is the business solution — not the code qu
 
 It also assesses teachability: can a user learn HOW to build this, not just run it? This matters for showroom lab conversion downstream.
 
+## What it produces
+
+A complete output directory at `/tmp/quickstart-intake-<repo-name>` containing:
+
+- All original source code (untouched)
+- Factory-standard README with business-first framing and all required sections
+- All factory scaffolding filled in with real content
+- The only remaining manual step: run benchmarks on target hardware to verify claims
+
 ## What it doesn't do
 
-- It doesn't rewrite your code or change your repo's architecture
-- It doesn't replace your README — it tells you what's missing
+- It doesn't modify the source repo — output goes to a separate directory
+- It doesn't rewrite your application code or change your architecture
 - It doesn't require every repo to have a Helm chart — script-only quickstarts are first-class
+- It doesn't verify performance claims — that requires real hardware
 
 ## Usage as a Claude Code skill
 
@@ -45,11 +56,11 @@ Then invoke:
 
 ## The factory standard
 
-Every quickstart produced by the factory ships with:
+Every quickstart produced by the intake ships with:
 
 | Component | Purpose |
 |-----------|---------|
-| `tests/validation_matrix.yaml` | 6-stage CDD->TDD->EDD gate definitions |
+| `tests/validation_matrix.yaml` | 6-stage CDD->TDD->EDD gate definitions with real criteria |
 | `tests/claim_registry.yaml` | Every factual assertion tracked with provenance |
 | `tests/benchmark_rubric.yaml` | Technique-specific performance thresholds |
 | `tests/publication/test_readme.py` | Automated README structure validation |
@@ -59,6 +70,7 @@ Every quickstart produced by the factory ships with:
 | `.env.example` | Environment variable template with placeholders |
 | `docs/images/` | Architecture diagrams |
 | `LICENSE` | Apache 2.0 |
+| `README.md` | Business-first, all required sections, passes test_readme.py |
 
 ## Pipeline position
 
