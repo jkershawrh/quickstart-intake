@@ -137,6 +137,8 @@ For each MISSING component that applies, create it:
 
 **LICENSE** — if missing, create Apache 2.0.
 
+**`__init__.py` files** — create empty `__init__.py` in tests/, tests/unit/, tests/integration/, tests/benchmarks/ so pytest discovers them as packages.
+
 **.gitignore** — if missing or incomplete, create/update with: `__pycache__/`, `*.pyc`, `.pytest_cache/`, `*.egg-info/`, `dist/`, `build/`, `.env`, `*.egg`, `venv/`, `.venv/`
 
 ### Phase 5: README Assessment
@@ -151,6 +153,9 @@ Required README elements:
 - Tags section with: Title, Description, Industry, Product, Use case, Partner, Contributor org
 - Industry tag from approved list
 - Tags in `- **Key:** value` format
+- Architecture diagram images must have descriptive alt text (not "image", "image1", or "screenshot")
+- Red Hat trademark first-mention-only rule (opl_compliance): "Red Hat" should be trademarked on first mention per Red Hat brand guidelines — don't use "RedHat" or "Redhat"
+- WCAG 2.2 AA accessibility: heading levels must nest correctly (no skipping from H2 to H4), all images need alt text, link text must be descriptive (no bare "click here" or "link")
 
 For script-only quickstarts, Deploy can be simplified. Not every README needs the full section tree — but the business problem must be clear up front.
 
