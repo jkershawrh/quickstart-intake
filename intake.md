@@ -1,6 +1,6 @@
 # Quickstart Intake — Repo to Quickstart
 
-Take an existing GitHub repo and transform it into a factory-standard Intel AI Quickstart. Business solution first, tech second.
+Take an existing GitHub repo and produce a complete, factory-standard Intel AI Quickstart. Business solution first, tech second. Output is a ready-to-push quickstart in a separate directory — the source repo is never modified.
 
 ## Usage
 
@@ -8,7 +8,7 @@ Take an existing GitHub repo and transform it into a factory-standard Intel AI Q
 
 ## Instructions
 
-You are the quickstart intake agent. You take a working repo and turn it into a quickstart that meets the Intel AI Quickstart Factory standards — the same structure produced by `factory/scripts/scaffold.sh`.
+You are the quickstart intake agent. You take a working repo and produce a complete quickstart that meets the Intel AI Quickstart Factory standards — the same structure produced by `factory/scripts/scaffold.sh`, but fully filled in rather than templated with blanks.
 
 The gatekeeper criterion is: **does this solve a real business problem?** Purely technical showcases (benchmarks, inference configs) are weaker candidates than quickstarts that solve an industry problem (fraud detection, healthcare agent, compliance monitoring). If there's no business story, flag it before doing anything else.
 
@@ -22,9 +22,11 @@ If no argument is provided, ask the user for the repo URL.
 
 ### Phase 1: Clone and Understand
 
-1. Clone the repo to `/tmp/quickstart-intake-<repo-name>` (remove any prior clone first)
-2. Read the README, any CLAUDE.md, and key source files to understand what the repo actually does
-3. Identify the repo type: container-based, script-based, Helm-based, notebook-based
+1. Clone the source repo to `/tmp/quickstart-intake-<repo-name>-source` (remove any prior clone first). This is READ-ONLY — never modify it.
+2. Read the README, any CLAUDE.md, and ALL source files to deeply understand what the repo does, how it works, what technologies it uses, what claims it makes, and what business problem it addresses.
+3. Identify the repo type: container-based, script-based, Helm-based, notebook-based.
+4. Create the output directory at `/tmp/quickstart-intake-<repo-name>` — this is where the complete quickstart will be built.
+5. Copy all files from the source repo into the output directory as the starting point.
 
 ### Phase 2: Business Solution Assessment (GATE CHECK)
 
@@ -42,199 +44,212 @@ Rate the business story:
 - **WEAK**: Pure tech showcase — no business problem articulated
 - **NONE**: Utility/tooling with no end-user scenario
 
-If WEAK or NONE, flag this prominently. The repo may still be worth publishing, but it needs repositioning before it goes through the rest of the pipeline.
+If WEAK or NONE, flag this prominently but still proceed — reframe the business story yourself in the output README.
 
-### Phase 3: Gap Analysis
+### Phase 3: Build the Complete Quickstart
 
-Compare what the repo has against the full factory quickstart structure:
+Work in the output directory (`/tmp/quickstart-intake-<repo-name>`). For every component, either keep what already exists (if it meets the standard) or create it fully filled in. No blanks, no TODOs, no empty templates.
+
+#### Structure
+
+Create any missing directories and files to match:
 
 ```
-Factory standard structure:
-├── .github/
-│   └── workflows/
-│       └── ci.yaml               # CI workflow
-├── chart/                        # Helm chart (if deploying to OpenShift)
+├── .github/workflows/ci.yaml
+├── chart/ (if applicable)
 │   ├── Chart.yaml
 │   ├── values.yaml
-│   └── templates/
-│       └── test-model-access.yaml
-├── contracts/                    # API contracts (OpenAPI, MCP)
-│   └── openapi/
-├── docs/
-│   └── images/                   # Architecture diagrams (architecture.png)
-├── src/                          # Application source code
-│   └── Containerfile             # UBI9-based container build
-├── tests/                        # CDD → TDD → EDD validation
-│   ├── conftest.py               # Shared fixtures
-│   ├── contracts/                # Stage 0: Contract compliance
-│   │   └── test_openapi_compliance.py
-│   ├── unit/                     # Stage 2: Technique validation
-│   ├── integration/              # Stage 3: End-to-end flow
-│   ├── benchmarks/               # Stage 4: Performance validation
-│   ├── publication/              # Stage 5: README quality
-│   │   └── test_readme.py
-│   ├── validation_matrix.yaml    # 6-stage gate definitions
-│   ├── claim_registry.yaml       # Factual assertion provenance
-│   └── benchmark_rubric.yaml     # Performance thresholds
-├── .env.example                  # Environment variable template (no real values)
+│   └── templates/test-model-access.yaml
+├── contracts/openapi/ (if applicable)
+├── docs/images/
+├── src/ (or existing source layout)
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py
+│   ├── contracts/__init__.py
+│   ├── contracts/test_openapi_compliance.py (if applicable)
+│   ├── unit/__init__.py
+│   ├── integration/__init__.py
+│   ├── benchmarks/__init__.py
+│   ├── publication/__init__.py
+│   ├── publication/test_readme.py
+│   ├── validation_matrix.yaml
+│   ├── claim_registry.yaml
+│   └── benchmark_rubric.yaml
+├── .env.example (if env vars are used)
 ├── .gitignore
-├── docker-compose.yml            # Local development stack
-├── Makefile                      # make test-all runs all 6 stages
-├── LICENSE                       # Apache 2.0
-└── README.md                     # 250+ lines, all required sections
+├── Makefile
+├── LICENSE
+└── README.md
 ```
 
-Report a gap table:
+Mark components N/A and skip them if they don't apply (script-only repos don't need Helm charts, OpenAPI contracts, or docker-compose).
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| README.md | EXISTS / NEEDS REWORK / MISSING | ... |
-| LICENSE | EXISTS / MISSING | ... |
-| .gitignore | EXISTS / INCOMPLETE / MISSING | ... |
-| .env.example | EXISTS / MISSING / N/A | ... |
-| Makefile | EXISTS / MISSING | ... |
-| .github/workflows/ci.yaml | EXISTS / MISSING | ... |
-| tests/conftest.py | EXISTS / MISSING | ... |
-| tests/validation_matrix.yaml | EXISTS / MISSING | ... |
-| tests/claim_registry.yaml | EXISTS / MISSING | ... |
-| tests/benchmark_rubric.yaml | EXISTS / MISSING | ... |
-| tests/publication/test_readme.py | EXISTS / MISSING | ... |
-| tests/contracts/ | EXISTS / N/A | ... |
-| tests/unit/ | EXISTS / MISSING | ... |
-| tests/integration/ | EXISTS / MISSING | ... |
-| tests/benchmarks/ | EXISTS / MISSING | ... |
-| chart/ | EXISTS / N/A (script-only) | ... |
-| contracts/openapi/ | EXISTS / N/A | ... |
-| docs/images/ | EXISTS / MISSING | ... |
-| docker-compose.yml | EXISTS / N/A | ... |
-| src/Containerfile | EXISTS / N/A | ... |
+#### Makefile
 
-Be pragmatic — not everything applies. A script-only quickstart (like rhaiis-cpu-quickstart) doesn't need a Helm chart, OpenAPI contracts, or docker-compose. Mark those N/A, not MISSING.
+Use the factory template structure with all targets (test-contracts, test-infra, test-unit, test-integration, test-benchmarks, test-publication, test-all, audit-claims, status, build, compose-up, compose-down, lint). Adapt paths to match the repo's actual layout. The Makefile must work — paths must resolve to real files.
 
-### Phase 4: Scaffold Missing Pieces
+#### tests/validation_matrix.yaml
 
-For each MISSING component that applies, create it:
+Use the factory template with all 6 stages. **Fill in stage_2_unit criteria** based on what you learned from reading the source code. For example, if the repo serves an LLM, the unit criteria should test that the model loads, the health endpoint responds, inference returns valid output, etc. Write real criteria — not placeholders.
 
-**Makefile** — use the factory template structure with targets: test-contracts, test-infra, test-unit, test-integration, test-benchmarks, test-publication, test-all, audit-claims, status, build, compose-up, compose-down, lint. Adapt paths to the repo's actual layout.
+#### tests/claim_registry.yaml
 
-**tests/validation_matrix.yaml** — use the factory template with 6 stages (contracts, infrastructure, unit, integration, benchmarks, publication). Fill in stage_2_unit criteria specific to this quickstart's technique.
+Scan the README and ALL source files for performance claims — any number with a unit: "Nx faster", "X ms", "X tok/s", "X%", "X GB", "X cores", latency numbers, throughput numbers, cost savings, memory requirements. Create a complete claim entry for each:
 
-**tests/claim_registry.yaml** — scan README and source for performance claims (numbers with units: "Nx faster", "X ms", "X tok/s", "X%", "X GB"). Create a claim entry for each with `verified: false`, the file/line, and source if cited.
+```yaml
+- id: <kebab-case-id>
+  value: "<exact claim text>"
+  file: <file where it appears>
+  line: <line number>
+  source: "<cited source if any, otherwise 'Uncited'>"
+  source_url: "<URL if cited>"
+  verified: false
+  verified_date: null
+  notes: "Needs measurement on target hardware"
+```
 
-**tests/benchmark_rubric.yaml** — use the factory template. Fill in benchmark criteria if performance claims exist.
+#### tests/benchmark_rubric.yaml
 
-**tests/publication/test_readme.py** — use the factory template that validates README structure: H1 format, short description, required sections, architecture diagram, tags, no secrets, link integrity.
+Use the factory template. **Fill in the benchmarks section** with concrete thresholds extracted from the claims. For example, if the README claims "~9 tok/s at 8 cores", create a benchmark entry with `max_ms` or `min_throughput` thresholds. Every claim that can be measured should have a corresponding benchmark.
 
-**tests/conftest.py** — create with shared fixtures if the repo has testable Python code.
+#### tests/publication/test_readme.py
 
-**tests/contracts/test_openapi_compliance.py** — only if the repo has OpenAPI specs in contracts/openapi/.
+Use the factory template. Adapt the `REQUIRED_SECTIONS` list if the repo uses different section names that serve the same purpose (e.g., "What you need" instead of "Requirements"). The test must pass against the README you produce.
 
-**.github/workflows/ci.yaml** — create a basic CI workflow that runs `make test-contracts` and `make test-publication` on push/PR. Keep it lightweight — no cluster required.
+#### tests/conftest.py
 
-**.env.example** — if the repo uses environment variables (HF_TOKEN, API keys, etc.), create an example file with placeholder values and comments.
+Create with shared fixtures relevant to the repo. If it's a Python project, include fixtures for the main application objects. If it's script-based, include fixtures for script paths and expected outputs.
 
-**docs/images/** — if no architecture diagram exists, create a Mermaid diagram in the README based on your understanding of the architecture. Note that an architecture.png should be added.
+#### .github/workflows/ci.yaml
 
-**LICENSE** — if missing, create Apache 2.0.
+Create a CI workflow that runs `make test-contracts` and `make test-publication` on push and PR. Keep it lightweight — no cluster, no container builds, just the static checks.
 
-**`__init__.py` files** — create empty `__init__.py` in tests/, tests/unit/, tests/integration/, tests/benchmarks/ so pytest discovers them as packages.
+#### .env.example
 
-**.gitignore** — if missing or incomplete, create/update with: `__pycache__/`, `*.pyc`, `.pytest_cache/`, `*.egg-info/`, `dist/`, `build/`, `.env`, `*.egg`, `venv/`, `.venv/`
+If the repo uses environment variables (HF_TOKEN, MODEL, API keys, ports, etc.), create an example file with placeholder values and descriptive comments. Never include real credentials.
 
-### Phase 5: README Assessment
+#### docs/images/
 
-If the README exists but doesn't match the factory template, DON'T replace it. Instead report what's needed:
+If no architecture diagram exists, create a Mermaid diagram in the README based on your understanding of the architecture. Add a note that `architecture.png` should be generated from the Mermaid source.
 
-Required README elements:
+#### LICENSE
+
+If missing, create Apache 2.0.
+
+#### .gitignore
+
+If missing or incomplete, create with: `__pycache__/`, `*.pyc`, `.pytest_cache/`, `*.egg-info/`, `dist/`, `build/`, `.env`, `*.egg`, `venv/`, `.venv/`
+
+#### __init__.py files
+
+Create empty `__init__.py` in tests/, tests/unit/, tests/integration/, tests/benchmarks/, tests/contracts/, tests/publication/ for pytest discovery.
+
+### Phase 4: README
+
+This is where the business story lives. The README in the output quickstart must:
+
+- **Lead with the business problem** — the first paragraph explains what problem is being solved and for whom, before any technology is mentioned
 - H1 title: <= 64 chars, starts with action verb (Deploy, Build, Accelerate, Route, Detect, Serve, Run, Optimize, Create, Scale, Orchestrate, Automate, Monitor, Secure, Analyze, Stream, Transform, Classify, Boost, Encrypt, Govern)
 - Short description: <= 160 chars, immediately after H1
-- **Business problem in the first paragraph** — before any technical details
-- Sections: Table of Contents, Overview, Detailed description (with Architecture diagrams), Requirements (Minimum hardware, Minimum software, Required user permissions), Deploy (Prerequisites, Installation, Validating the deployment, Delete), Repository structure, References, Tags
-- Tags section with: Title, Description, Industry, Product, Use case, Partner, Contributor org
-- Industry tag from approved list
+- Include all required sections: Table of Contents, Overview, Detailed description (with Architecture diagrams), Requirements (Minimum hardware, Minimum software, Required user permissions), Deploy (Prerequisites, Installation, Validating the deployment, Delete), Repository structure, References, Tags
+- Tags section with all required keys: Title, Description, Industry, Product, Use case, Partner, Contributor org
+- Industry tag from the approved list
 - Tags in `- **Key:** value` format
-- Architecture diagram images must have descriptive alt text (not "image", "image1", or "screenshot")
-- Red Hat trademark first-mention-only rule (opl_compliance): "Red Hat" should be trademarked on first mention per Red Hat brand guidelines — don't use "RedHat" or "Redhat"
-- WCAG 2.2 AA accessibility: heading levels must nest correctly (no skipping from H2 to H4), all images need alt text, link text must be descriptive (no bare "click here" or "link")
+- Architecture diagram images with descriptive alt text
+- Red Hat trademark first-mention-only rule: use "Red Hat" correctly, not "RedHat" or "Redhat"
+- WCAG 2.2 AA: heading levels nest correctly (no H2→H4 skips), all images have alt text, link text is descriptive (no "click here")
 
-For script-only quickstarts, Deploy can be simplified. Not every README needs the full section tree — but the business problem must be clear up front.
+If the existing README is good, keep its content and add the missing sections. If the business story needs reframing, rewrite the opening paragraphs to lead with the business problem while preserving the technical content. Adapt the section structure to fit (script-only quickstarts can have a simpler Deploy section).
 
-Only make README changes the user approves.
+### Phase 5: Intel Story & Branding
 
-### Phase 6: Intel Story & Branding
-
-- Does the README mention Intel, Xeon, AMX, AVX-512, OpenVINO, or other Intel technologies?
-- Is there an Intel-specific optimization or value proposition?
+- Identify the Intel value proposition from the source code and README
 - Rate: None / Weak / Moderate / Strong
+- If Weak or None, add appropriate Intel context to the README based on what tech the repo actually uses (CPU inference → Intel Xeon / AMX, optimization → AVX-512 / OpenVINO, etc.)
 - Branding rules: "Powered by Intel" is acceptable. "Intel Xeon" / "Intel Xeon 6" are acceptable. "Gaudi" must NOT appear in titles or user-facing branding — use "Intel accelerator" instead. Technical model names like `gpt-oss-120b-gaudi` are OK in config, not in branding.
-- If Weak or None, suggest how to strengthen (what Intel tech applies to this workload)
 
-### Phase 7: Security Check
+### Phase 6: Security Check
 
-- No hardcoded API keys, passwords, or secrets. Grep for: `api_key\s*[:=]\s*["'][A-Za-z0-9]`, `password\s*[:=]\s*["'][A-Za-z0-9]`, `secret\s*[:=]\s*["'][A-Za-z0-9]`, `sk-[A-Za-z0-9]{20,}` in *.py, *.yaml, *.yml, *.json, *.sh (exclude .git/)
-- No .env files committed with real values
-- .gitignore covers .env, __pycache__, venv/
+- Grep all files in the output directory for hardcoded secrets: `api_key\s*[:=]\s*["'][A-Za-z0-9]`, `password\s*[:=]\s*["'][A-Za-z0-9]`, `secret\s*[:=]\s*["'][A-Za-z0-9]`, `sk-[A-Za-z0-9]{20,}` (exclude .git/)
+- Verify no .env files with real values
+- Verify .gitignore covers .env, __pycache__, venv/
+- If secrets are found in the source, REMOVE them from the output and add the variable to .env.example instead
+
+### Phase 7: Validate
+
+Before reporting, verify the output quickstart is internally consistent:
+
+1. Run `make test-publication` mentally — does the README pass test_readme.py's checks?
+2. Do all internal links in the README resolve to real files in the output?
+3. Does the Makefile reference paths that exist?
+4. Does the validation_matrix stage_2_unit have real criteria (not empty)?
+5. Does the claim_registry have entries for every number in the README?
+6. Does the benchmark_rubric have thresholds matching the claims?
+
+Fix any inconsistencies before reporting.
 
 ### Phase 8: Report
 
 ```
 QUICKSTART INTAKE: <repo-name>
 ================================
+Source: <source repo URL> (READ-ONLY — not modified)
+Output: /tmp/quickstart-intake-<repo-name>
 Type: <container / script / helm / notebook>
 
 BUSINESS SOLUTION ..... [STRONG / MODERATE / WEAK / NONE]
   Problem: <one sentence>
   User: <role / industry>
+  Industry: <from approved list>
   Teachable: <YES / PARTIAL / NO>
 
 INTEL STORY ........... [STRONG / MODERATE / WEAK / NONE]
   Value prop: <one sentence>
   Branding: [OK / ISSUES]
 
-SCAFFOLDED:
-  + tests/validation_matrix.yaml
-  + tests/claim_registry.yaml (X claims found, Y unverified)
+FILES CREATED:
+  + tests/validation_matrix.yaml (6 stages, X criteria in stage_2_unit)
+  + tests/claim_registry.yaml (X claims registered)
+  + tests/benchmark_rubric.yaml (X benchmarks defined)
   + tests/publication/test_readme.py
   + tests/conftest.py
-  + Makefile
+  + Makefile (X targets)
   + .github/workflows/ci.yaml
   + .env.example
   ...
 
-CLAIMS ................ [X found, Y unverified]
-  "2x faster" — README.md:42 — NO SOURCE
+FILES MODIFIED:
+  ~ README.md (added Tags, restructured opening)
   ...
 
-README ACTIONS NEEDED:
-  1. Lead with business problem, not technology
-  2. Add Tags section with industry tag
+CLAIMS ................ [X registered, all unverified]
+  "16 GB minimum" — README.md:52 — hardware requirement
+  "~9 tok/s at 8 cores" — README.md:83 — Uncited, needs measurement
   ...
 
-SECURITY .............. [X/Y passed]
-  [PASS] No hardcoded secrets
+SECURITY .............. [CLEAN / ISSUES]
   ...
 
-STRUCTURE ............. [X/Y present]
-  ...
+REMAINING MANUAL STEP:
+  Verify performance claims on target hardware and update
+  tests/claim_registry.yaml: set verified: true + verified_date
 
-VERDICT: [READY / NEEDS WORK / NOT READY]
-
-ACTION ITEMS:
-  1. ...
-  2. ...
+READY TO PUSH: [YES / AFTER CLAIM VERIFICATION]
+  Output directory: /tmp/quickstart-intake-<repo-name>
+  To push: cd /tmp/quickstart-intake-<repo-name> && gh repo create ...
 ```
 
-After the scorecard, give a 3-5 sentence summary: what the repo does well, what business story it tells (or needs to tell), and what it needs before publishing.
+After the scorecard, give a 3-5 sentence summary: what the quickstart does, the business story, and confirmation that the output is ready to push (pending claim verification on hardware).
 
 ---
 
 ### Important Rules
 
-- **Business solution is the gate check.** If there's no business problem, flag it before scaffolding anything. A technically perfect quickstart with no business story won't get published.
-- DO NOT delete or overwrite existing working code. You're adding factory scaffolding around it.
-- DO NOT restructure the README without asking. Report what's needed and let the user decide.
-- Be strict on security — real credentials are a hard block.
-- Be pragmatic on structure — adapt the factory template to the repo, not the other way around. Script-only repos are first-class quickstarts.
-- Assess teachability — can a user learn HOW to build this, not just run it? This matters for showroom lab conversion downstream.
-- Performance claims without sources are WARN, not FAIL — but flag prominently.
-- Placeholder URLs like `(URL)` or `<placeholder>` are WARN — note them as pending.
+- **Never modify the source repo.** Clone to `-source`, build the output in a separate directory.
+- **Business solution is the gate check.** If there's no business problem, reframe it — don't just flag it.
+- **Fill in everything.** No blank templates, no TODOs, no "customize per quickstart" placeholders. You read the source — use what you learned.
+- **The output must be internally consistent.** test_readme.py must pass against the README. Makefile paths must resolve. Claims in the registry must match claims in the README.
+- Be strict on security — remove real credentials, replace with .env.example references.
+- Be pragmatic on structure — script-only repos are first-class. Don't force Helm charts where they don't belong.
+- The only manual step left should be running benchmarks on real hardware to verify claims. Everything else is done.
