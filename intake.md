@@ -169,7 +169,56 @@ If the existing README is good, keep its content and add the missing sections. I
 - If Weak or None, add appropriate Intel context to the README based on what tech the repo actually uses (CPU inference → Intel Xeon / AMX, optimization → AVX-512 / OpenVINO, etc.)
 - Branding rules: "Powered by Intel" is acceptable. "Intel Xeon" / "Intel Xeon 6" are acceptable. "Gaudi" must NOT appear in titles or user-facing branding — use "Intel accelerator" instead. Technical model names like `gpt-oss-120b-gaudi` are OK in config, not in branding.
 
-### Phase 6: Security Check
+### Phase 6: Overlap Scan
+
+Scan the `rh-ai-quickstart` GitHub org (and optionally local quickstarts) to detect overlap with existing quickstarts. This prevents publishing a quickstart that duplicates something already in the catalog.
+
+**Step 1: Fetch existing quickstarts from the org.**
+
+```bash
+gh repo list rh-ai-quickstart --limit 200 --json name,description
+```
+
+**Step 2: Extract features from the intake quickstart.** From the README and source, identify:
+- Industry (from Tags section)
+- Techniques used (RAG, tool-calling, classification, scoring, agent, governance, drift-detection, multi-model, MCP, confidential-compute, speculative-decoding, etc.)
+- Key technologies (vLLM, OpenVINO, Ollama, LangChain, etc.)
+- Business problem keywords (fraud, observability, compliance, routing, etc.)
+
+**Step 3: Compare against every repo in the org.** For each org repo, check:
+- **Direct name match**: same repo name = already published (skip or update)
+- **Keyword overlap**: compare industry, technique, and business keywords against the org repo's name and description. Score by number of matching keywords.
+- **Technique pattern match**: repos solving the same problem with the same technique (e.g., two RAG quickstarts, two inference servers, two agent governance tools)
+
+**Step 4: Score and report.**
+
+| Overlap level | Criteria | Action |
+|---|---|---|
+| **DUPLICATE** | Direct name match in org | Already published — update instead of creating new |
+| **HIGH** (>=3 keyword matches) | Same technique + same business problem | Flag — explain differentiation or merge |
+| **MEDIUM** (2 keyword matches) | Same technique, different angle | Note — ensure README clearly differentiates |
+| **LOW** (1 keyword match) | Tangential similarity | OK to proceed |
+| **NONE** | No matches | Clear to publish |
+
+Report format:
+
+```
+OVERLAP SCAN:
+  Org repos scanned: N
+  Direct matches: X (already published)
+  High overlap: Y
+  Medium overlap: Z
+
+  [DUPLICATE] hybrid-fraud-detection — already in org
+  [HIGH] mcp-federated-tools ↔ secure-tool-planner (both: MCP + agent + tools)
+  [MEDIUM] edge-ai-cpu-inference ↔ llm-cpu-serving (both: CPU inference)
+```
+
+If HIGH overlaps are found, note what makes this quickstart different (Intel hardware, different technique, different industry) so the author can sharpen the differentiation in the README.
+
+**Step 5: Local overlap** (optional). If `/Users/jkershaw/Documents/intel-quickstarts-triforce/quickstarts/` exists, also compare against sibling quickstarts in the factory. Use the same scoring but compare techniques more deeply (grep source for shared patterns).
+
+### Phase 7: Security Check
 
 - Grep all files in the output directory for hardcoded secrets: `api_key\s*[:=]\s*["'][A-Za-z0-9]`, `password\s*[:=]\s*["'][A-Za-z0-9]`, `secret\s*[:=]\s*["'][A-Za-z0-9]`, `sk-[A-Za-z0-9]{20,}` (exclude .git/)
 - Verify no .env files with real values
@@ -332,6 +381,12 @@ CLAIMS ................ [X registered, all unverified]
   "16 GB minimum" — README.md:52 — hardware requirement
   "~9 tok/s at 8 cores" — README.md:83 — Uncited, needs measurement
   ...
+
+OVERLAP SCAN .......... [CLEAR / DUPLICATES / HIGH / MEDIUM]
+  Org repos scanned: N
+  [DUPLICATE] <name> — already in org
+  [HIGH] <ours> ↔ <theirs> (shared: technique1, technique2)
+  [MEDIUM] <ours> ↔ <theirs> (shared: keyword)
 
 SECURITY .............. [CLEAN / ISSUES]
   ...
