@@ -12,10 +12,13 @@ You point `/intake` at a repo. It:
 4. **Rewrites the README** to lead with the business problem, adds all required sections (Table of Contents, Overview, Architecture, Requirements, Deploy, Repository structure, References, Tags), and ensures it passes `test_readme.py`
 5. **Registers all claims** — scans README and source for performance numbers, creates a claim registry entry for each with file/line and verification status
 6. **Fills in technique-specific test criteria** — reads the source code and writes real `stage_2_unit` criteria in the validation matrix, not placeholders
-7. **Checks Intel story and branding** — rates the value prop, suggests strengthening if weak, enforces "Powered by Intel" rules
-8. **Checks security** — scans for hardcoded secrets, removes any found, adds variables to `.env.example`
-9. **Self-validates** — verifies the output is internally consistent (README passes test_readme.py, Makefile paths resolve, claims match registry)
-10. **Reports a scorecard** — business solution rating, Intel story, files created/modified, claims registered, security status, verdict
+7. **Generates a Gradio frontend** (`src/ui.py`) — inspects the repo's API surface (OpenAPI specs, FastAPI routes, README curl examples), then builds a tabbed Gradio UI with pre-filled example inputs, `httpx` backend helpers, and an AI disclaimer. Matches the `gr.Blocks` pattern used across all 35 existing quickstarts. Keeps existing Gradio UIs if present
+8. **Checks Intel story and branding** — rates the value prop, suggests strengthening if weak, enforces "Powered by Intel" rules
+9. **Checks security** — scans for hardcoded secrets, removes any found, adds variables to `.env.example`
+10. **Scans for overlap** — compares against all repos in the `rh-ai-quickstart` org and local sibling quickstarts to flag duplicates or high-overlap entries before you publish
+11. **Self-validates** — verifies the output is internally consistent (README passes test_readme.py, Makefile paths resolve, claims match registry, Gradio UI syntax parses)
+12. **Runs the quickstart** — installs deps, runs publication/contract/unit tests, renders Helm templates, attempts container builds and compose stacks
+13. **Reports a scorecard** — business solution rating, Intel story, Gradio UI status, files created/modified, claims registered, overlap scan, security, run results, verdict
 
 ## The gate check
 
@@ -67,6 +70,7 @@ Every quickstart produced by the intake ships with:
 | `tests/conftest.py` | Shared test fixtures |
 | `Makefile` | `make test-all` runs all 6 stages sequentially |
 | `.github/workflows/ci.yaml` | CI runs contracts + publication checks on push |
+| `src/ui.py` | Gradio frontend — tabbed UI wired to backend API endpoints |
 | `.env.example` | Environment variable template with placeholders |
 | `docs/images/` | Architecture diagrams |
 | `LICENSE` | Apache 2.0 |
